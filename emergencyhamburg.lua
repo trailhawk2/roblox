@@ -1,12 +1,11 @@
--- Emergency Hamburg Script by Venice
--- Features: Kill Aura, Anti-Cuff, Keep-Away, Car Blaster
+-- Emergency Hamburg Script by Venice (Updated v2)
+-- Features: Down & Freeze Aura, Anti-Cuff, Keep-Away
 -- For use with Delta Executor or similar
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
 
 -- Main GUI
 local screenGui = Instance.new("ScreenGui")
@@ -21,8 +20,8 @@ mainFrame.Parent = screenGui
 mainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 mainFrame.BorderColor3 = Color3.fromRGB(255, 0, 0)
 mainFrame.BorderSizePixel = 2
-mainFrame.Position = UDim2.new(0.5, -200, 0.5, -150)
-mainFrame.Size = UDim2.new(0, 400, 0, 300)
+mainFrame.Position = UDim2.new(0.5, -150, 0.5, -125)
+mainFrame.Size = UDim2.new(0, 300, 0, 250)
 mainFrame.Active = true
 mainFrame.Draggable = true
 
@@ -38,7 +37,7 @@ titleLabel.Text = "Emergency Hamburg - GUI"
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleLabel.TextSize = 18
 
--- Function to create toggles and sliders
+-- Function to create toggles
 local function createToggle(parent, name, position, default)
     local button = Instance.new("TextButton")
     button.Name = name
@@ -62,94 +61,57 @@ local function createToggle(parent, name, position, default)
     return button, function() return state end
 end
 
-local function createSlider(parent, name, position, min, max, default)
+-- Function to create text boxes for radius
+local function createRadiusInput(parent, name, position, default)
     local label = Instance.new("TextLabel")
     label.Name = name .. "Label"
     label.Parent = parent
-    label.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    label.BorderSizePixel = 0
-    label.Position = UDim2.new(0, position.X.Offset, 0, position.Y.Offset)
-    label.Size = UDim2.new(0, 150, 0, 20)
+    label.BackgroundTransparency = 1
+    label.Position = position
+    label.Size = UDim2.new(0, 80, 0, 20)
     label.Font = Enum.Font.SourceSans
-    label.Text = name .. ": " .. default
+    label.Text = name .. ":"
     label.TextColor3 = Color3.fromRGB(255, 255, 255)
     label.TextSize = 14
-    
-    local slider = Instance.new("TextButton")
-    slider.Name = name .. "Slider"
-    slider.Parent = parent
-    slider.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-    slider.BorderSizePixel = 0
-    slider.Position = UDim2.new(0, position.X.Offset + 160, 0, position.Y.Offset)
-    slider.Size = UDim2.new(0, 100, 0, 20)
-    slider.Font = Enum.Font.SourceSans
-    slider.Text = ""
-    slider.TextColor3 = Color3.fromRGB(255, 255, 255)
-    slider.TextSize = 14
-    
-    local fill = Instance.new("Frame")
-    fill.Name = "Fill"
-    fill.Parent = slider
-    fill.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
-    fill.BorderSizePixel = 0
-    fill.Position = UDim2.new(0, 0, 0, 0)
-    fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
-    
-    local value = default
-    local dragging = false
-    
-    local function updateSlider(input)
-        local sliderPos = slider.AbsolutePosition.X
-        local sliderSize = slider.AbsoluteSize.X
-        local mousePos = input.Position.X
-        local percent = math.clamp((mousePos - sliderPos) / sliderSize, 0, 1)
-        value = min + (max - min) * percent
-        fill.Size = UDim2.new(percent, 0, 1, 0)
-        label.Text = name .. ": " .. math.floor(value)
+    label.TextXAlignment = Enum.TextXAlignment.Left
+
+    local textBox = Instance.new("TextBox")
+    textBox.Name = name .. "Box"
+    textBox.Parent = parent
+    textBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    textBox.BorderSizePixel = 0
+    textBox.Position = UDim2.new(0, position.X.Offset + 85, 0, position.Y.Offset - 2)
+    textBox.Size = UDim2.new(0, 50, 0, 24)
+    textBox.Font = Enum.Font.SourceSans
+    textBox.PlaceholderText = tostring(default)
+    textBox.Text = ""
+    textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    textBox.TextSize = 14
+
+    local function getValue()
+        local val = tonumber(textBox.Text)
+        if val then
+            return val
+        else
+            -- Return default if text is not a number
+            return default
+        end
     end
-    
-    slider.MouseButton1Down:Connect(function()
-        dragging = true
-    end)
-    
-    UserInputService.InputChanged:Connect(function(input)
-        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-            updateSlider(input)
-        end
-    end)
-    
-    UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = false
-        end
-    end)
-    
-    return label, function() return value end
+
+    return label, textBox, getValue
 end
 
 -- Create UI Elements
-local killAuraToggle, getKillAuraState = createToggle(mainFrame, "Kill Aura", UDim2.new(0, 20, 0, 50), false)
-local killAuraSlider, getKillAuraRadius = createSlider(mainFrame, "Kill Radius", UDim2.new(0, 20, 0, 90), 10, 200, 50)
+local downFreezeToggle, getDownFreezeState = createToggle(mainFrame, "Down & Freeze", UDim2.new(0, 20, 0, 50), false)
+local downFreezeRadiusBox = createRadiusInput(mainFrame, "Radius", UDim2.new(0, 20, 0, 90), 50)
 
-local antiCuffToggle, getAntiCuffState = createToggle(mainFrame, "Anti-Cuff", UDim2.new(0, 220, 0, 50), false)
+local antiCuffToggle, getAntiCuffState = createToggle(mainFrame, "Anti-Cuff", UDim2.new(0, 160, 0, 50), false)
 
 local keepAwayToggle, getKeepAwayState = createToggle(mainFrame, "Keep-Away", UDim2.new(0, 20, 0, 130), false)
-local keepAwaySlider, getKeepAwayRadius = createSlider(mainFrame, "Away Radius", UDim2.new(0, 20, 0, 170), 10, 100, 30)
+local keepAwayRadiusBox = createRadiusInput(mainFrame, "Radius", UDim2.new(0, 20, 0, 170), 30)
 
-local carBlastToggle, getCarBlastState = createToggle(mainFrame, "Car Blaster", UDim2.new(0, 220, 0, 130), false)
-local carBlastSlider, getCarBlastRadius = createSlider(mainFrame, "Blast Radius", UDim2.new(0, 220, 0, 170), 20, 300, 100)
-
-local blastButton = Instance.new("TextButton")
-blastButton.Name = "BlastButton"
-blastButton.Parent = mainFrame
-blastButton.BackgroundColor3 = Color3.fromRGB(255, 165, 0)
-blastButton.BorderSizePixel = 0
-blastButton.Position = UDim2.new(0, 220, 0, 210)
-blastButton.Size = UDim2.new(0, 160, 0, 40)
-blastButton.Font = Enum.Font.SourceSansBold
-blastButton.Text = "!!! BIG BANG !!!"
-blastButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-blastButton.TextSize = 16
+-- Table to keep track of frozen players to restore their speed later
+local frozenPlayers = {}
 
 -- Core Logic
 RunService.Heartbeat:Connect(function()
@@ -157,58 +119,83 @@ RunService.Heartbeat:Connect(function()
     local myRoot = LocalPlayer.Character.HumanoidRootPart
     local myPos = myRoot.Position
 
-    -- Kill Aura
-    if getKillAuraState() then
-        local radius = getKillAuraRadius()
+    -- Down & Freeze Aura
+    if getDownFreezeState() then
+        local radius = downFreezeRadiusBox()
         for _, player in ipairs(Players:GetPlayers()) do
             if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
                 local targetRoot = player.Character.HumanoidRootPart
                 if (targetRoot.Position - myPos).Magnitude <= radius then
                     local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
                     if humanoid and humanoid.Health > 0 then
-                        -- Method 1: Set Health to 0 (most common for downing)
+                        -- Down the player
                         humanoid.Health = 0
-                        -- Method 2: If the game uses a custom down system, try to find a remote event/function
-                        -- This is game-specific and may require finding the correct remote.
-                        -- Example (replace with actual remote name if found):
-                        -- game.ReplicatedStorage.SomeDownEvent:Fire
--- Example (replace with actual remote name if found):
-                        -- game.ReplicatedStorage.SomeDownEvent:FireServer(player)
+                        -- Freeze them immediately after downing
+                        humanoid.WalkSpeed = 0
+                        humanoid.JumpPower = 0
+                        -- Add to frozen list to manage them
+                        if not frozenPlayers[player] then
+                            frozenPlayers[player] = true
+                        end
                     end
                 end
             end
         end
+    else
+        -- If the toggle is OFF, unfreeze everyone we previously froze
+        for player, _ in pairs(frozenPlayers) do
+            if player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
+                local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+                -- Only restore if they are still downed (health is 0)
+                if humanoid.Health == 0 then
+                    humanoid.WalkSpeed = 0 -- Keep them frozen while downed
+                    humanoid.JumpPower = 0
+                else
+                    -- If they are revived, restore normal movement
+                    humanoid.WalkSpeed = 16 -- Default walk speed
+                    humanoid.JumpPower = 50 -- Default jump power
+                end
+            end
+        end
+        -- We don't clear the table here in case they are re-downed
     end
 
-    -- Anti-Cuff
+    -- Clean up the frozen list for players who have been revived
+    for player, _ in pairs(frozenPlayers) do
+        if player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
+            local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid.Health > 0 then
+                -- They are alive, so remove them from the list
+                frozenPlayers[player] = nil
+            end
+        else
+            -- Character no longer exists, remove from list
+            frozenPlayers[player] = nil
+        end
+    end
+
+    -- Anti-Cuff (Improved)
     if getAntiCuffState() then
-        for _, tool in ipairs(LocalPlayer.Character:GetChildren()) do
+        for _, tool in ipairs(LocalPlayer.Backpack:GetChildren()) do
             if tool:IsA("Tool") and (tool.Name:lower():find("cuff") or tool.Name:lower():find("handcuff")) then
                 tool:Destroy()
             end
         end
-        -- This is a more aggressive approach: destroy any tool added to the character
-        LocalPlayer.Character.ChildAdded:Connect(function(child)
-            if child:IsA("Tool") and (child.Name:lower():find("cuff") or child.Name:lower():find("handcuff")) then
-                child:Destroy()
-            end
-        end)
     end
 
     -- Keep-Away (Forcefield Push)
     if getKeepAwayState() then
-        local radius = getKeepAwayRadius()
+        local radius = keepAwayRadiusBox()
         for _, player in ipairs(Players:GetPlayers()) do
             if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
                 local targetRoot = player.Character.HumanoidRootPart
                 local distance = (targetRoot.Position - myPos).Magnitude
+                local distance = (targetRoot.Position - myPos).Magnitude
                 if distance <= radius and distance > 0 then
-                    -- Calculate push direction
                     local pushDirection = (targetRoot.Position - myPos).Unit
-                    -- Apply a strong velocity to push them away
                     local targetHumanoid = player.Character:FindFirstChildOfClass("Humanoid")
                     if targetHumanoid and targetHumanoid.RootPart then
-                        targetHumanoid.RootPart.Velocity = pushDirection * 100 -- Adjust power as needed
+                        targetHumanoid.RootPart.Velocity = pushDirection * 100
                     end
                 end
             end
@@ -216,56 +203,4 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- Car Blaster Logic
-local function blastCars()
-    if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
-    local myPos = LocalPlayer.Character.HumanoidRootPart.Position
-    local radius = getCarBlastRadius()
-
-    for _, model in ipairs(workspace:GetDescendants()) do
-        -- Check if it's a car model. This is a guess and might need adjustment.
-        if model:IsA("Model") and model:FindFirstChild("VehicleSeat") then
-            local primaryPart = model.PrimaryPart
-            if not primaryPart then
-                -- Fallback to the first BasePart found
-                for _, part in ipairs(model:GetChildren()) do
-                    if part:IsA("BasePart") then
-                        primaryPart = part
-                        break
-                    end
-                end
-            end
-            
-            if primaryPart and (primaryPart.Position - myPos).Magnitude <= radius then
-                -- Method 1: Set it on fire (if Fire is a valid object in this game's context)
-                local fire = Instance.new("Fire")
-                fire.Parent = primaryPart
-                fire.Size = 15
-                fire.Heat = 25
-                
-                -- Method 2: Apply an explosive force
-                local explosion = Instance.new("Explosion")
-                explosion.Position = primaryPart.Position
-                explosion.BlastRadius = 10 -- Small radius to affect the car itself
-                explosion.BlastPressure = 500000 -- High pressure to launch it
-                explosion.Parent = workspace
-                
-                -- Method 3: Break all joints to make it fall apart
-                for _, joint in ipairs(model:GetDescendants()) do
-                    if joint:IsA("Motor6D") or joint:IsA("Weld") or joint:IsA("WeldConstraint") then
-                        joint:Destroy()
-                    end
-                end
-            end
-        end
-    end
-end
-
--- Connect the Big Bang button
-blastButton.MouseButton1Click:Connect(function()
-    if getCarBlastState() then
-        blastCars()
-    end
-end)
-
-print("Emergency Hamburg GUI Loaded. Made by Venice.")
+print("Updated Emergency Hamburg GUI v2 Loaded. Made by Venice.")

@@ -1,5 +1,5 @@
--- Simple Kill Aura for Emergency Hamburg by Venice
--- Kills players by teleporting them below the map.
+-- Kill Aura with Health Downing for Emergency Hamburg by Venice
+-- Kills players by teleporting them below the map AND setting their health to 0.
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -26,7 +26,7 @@ titleLabel.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 titleLabel.BorderSizePixel = 0
 titleLabel.Size = UDim2.new(1, 0, 0, 30)
 titleLabel.Font = Enum.Font.SourceSansBold
-titleLabel.Text = "Kill Aura"
+titleLabel.Text = "Kill Aura v2"
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleLabel.TextSize = 16
 
@@ -85,11 +85,16 @@ RunService.Heartbeat:Connect(function()
         if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
             local targetRoot = player.Character.HumanoidRootPart
             if (targetRoot.Position - myPos).Magnitude <= radius then
-                -- Teleport them far below the map to force a down state
+                local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+                
+                -- Dual Action: Set health to 0 AND teleport them
+                if humanoid then
+                    humanoid.Health = 0
+                end
                 targetRoot.CFrame = CFrame.new(0, -500, 0)
             end
         end
     end
 end)
 
-print("Simple Kill Aura Loaded.")
+print("Kill Aura v2 (Health + Push) Loaded.")

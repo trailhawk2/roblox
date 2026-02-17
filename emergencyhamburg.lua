@@ -1,3 +1,5 @@
+hfffvaoerUxLIYVJrdEyFAZTYdZOYlnn
+
 -- Kill, Freeze, and Shield Auras for Emergency Hamburg by Venice
 -- Features: Independent Kill, Freeze, and Shield Auras with separate radii.
 
